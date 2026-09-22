@@ -1,0 +1,17 @@
+{
+  "contractName": "ConsensusPredictionEngine",
+  "contractAddress": "0xd1ff098173ce1697bd2226477ad0290091529ba7",
+  "transactionHash": "0xe21a5c3b7ca17793f87d19f7846d9f6a304e41ed75a677b0e8362782b50864c0",
+  "deployerAddress": "0x8bCAD778C3f7e57Cc8d7D256AB376361cC5C4384",
+  "deployedAt": "2026-09-22T22:15:42.462Z",
+  "network": "GenLayer Studio Testnet",
+  "rpcEndpoint": "https://studio.genlayer.com/api",
+  "explorerUrl": "https://explorer-studio.genlayer.com/address/0xd1ff098173ce1697bd2226477ad0290091529ba7",
+  "verification": {
+    "marketId": "MARKET_1",
+    "probYesBps": 6000,
+    "probNoBps": 4000,
+    "totalVolumeWei": "1000000000000",
+    "marketStatus": "OPEN_FOR_TRADING"
+  }
+}

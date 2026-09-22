@@ -1,0 +1,20 @@
+{
+  "name": "consensus-prediction-engine",
+  "version": "1.0.0",
+  "description": "Autonomous Parimutuel Prediction Market & Subjective Ambiguity Resolver on GenLayer",
+  "main": "contracts/ConsensusPredictionEngine.py",
+  "type": "module",
+  "scripts": {
+    "test": "python test/test_consensus_prediction_engine.py",
+    "deploy": "node scripts/deploy_prediction_engine.mjs"
+  },
+  "keywords": [
+    "genlayer",
+    "intelligent-contracts",
+    "prediction-market",
+    "parimutuel",
+    "escrow"
+  ],
+  "author": "metaremover",
+  "license": "MIT"
+}
