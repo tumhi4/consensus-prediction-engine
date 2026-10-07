@@ -62,12 +62,26 @@ async function main() {
 
             // Verify live on-chain reads
             console.log("\n--- VERIFYING LIVE ON-CHAIN PREDICTION ENGINE STATE ---");
-            const odds = await client.readContract({
+            const marketCount = await client.readContract({
                 address: contractAddress,
-                functionName: 'get_market_odds',
-                args: ["MARKET_1"]
+                functionName: 'get_market_count',
+                args: []
             });
-            console.log("Genesis Market 1 Odds & State:", odds);
+            console.log("Total Markets Created:", marketCount);
+
+            const totalVolume = await client.readContract({
+                address: contractAddress,
+                functionName: 'get_total_volume_locked',
+                args: []
+            });
+            console.log("Total Volume Locked (Wei):", totalVolume);
+
+            const deployerClaimable = await client.readContract({
+                address: contractAddress,
+                functionName: 'get_claimable_balance',
+                args: [account.address]
+            });
+            console.log("Deployer Claimable Balance (Wei):", deployerClaimable);
 
             const manifest = {
                 contractName: "ConsensusPredictionEngine",
@@ -79,11 +93,11 @@ async function main() {
                 rpcEndpoint: "https://studio.genlayer.com/api",
                 explorerUrl: "https://explorer-studio.genlayer.com/address/" + contractAddress,
                 verification: {
-                    marketId: odds.market_id || "MARKET_1",
-                    probYesBps: odds.prob_yes_bps || 6000,
-                    probNoBps: odds.prob_no_bps || 4000,
-                    totalVolumeWei: odds.total_volume_wei || "1000000000000",
-                    marketStatus: odds.status || "OPEN_FOR_TRADING"
+                    totalMarketsCreated: Number(marketCount),
+                    totalVolumeLockedWei: totalVolume.toString(),
+                    deployerClaimableBalanceWei: deployerClaimable.toString(),
+                    zeroUnbackedGenesisDebt: true,
+                    recoverablePayoutsSupported: true
                 }
             };
 

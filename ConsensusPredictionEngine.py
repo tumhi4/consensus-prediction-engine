@@ -82,51 +82,22 @@ class ConsensusPredictionEngine(gl.Contract):
     def __init__(self, owner: str):
         clean_owner = self._validate_eth_address(owner, "Contract Owner")
         self.owner = clean_owner.lower()
-        self.total_markets_created = u256(1)
+        self.total_markets_created = u256(0)
         self.total_markets_resolved = u256(0)
-        self.total_volume_locked = u256(1_000_000_000_000)
+        self.total_volume_locked = u256(0)
         self.total_payouts_distributed = u256(0)
 
-        # ----------------------------------------------------------------------
-        # GENESIS FIXTURES (Permanently Consumed & Immutable)
-        # ----------------------------------------------------------------------
-        creator = "0x1111111111111111111111111111111111111111"
-        genesis_time = 1790000000
-
-        m1_id = "MARKET_1"
-        m1_hash = self._compute_market_hash(creator, "Will Ethereum execute Pectra upgrade in 2026?", "https://eips.ethereum.org/EIPS/eip-7600", "GENESIS_M1")
-
-        m1 = MarketRecord(
-            market_id=m1_id,
-            creator=creator,
-            question="Will Ethereum execute Pectra upgrade in 2026?",
-            resolution_source_url="https://eips.ethereum.org/EIPS/eip-7600",
-            market_hash=m1_hash,
-            pool_yes=u256(600_000_000_000),
-            pool_no=u256(400_000_000_000),
-            total_volume=u256(1_000_000_000_000),
-            created_at=u256(genesis_time),
-            close_timestamp=u256(genesis_time + 86400 * 30),
-            resolution_timestamp=u256(0),
-            winning_outcome="NONE",
-            status="OPEN_FOR_TRADING",
-            adjudication_rationale=""
-        )
-
-        self.markets[m1_id] = m1
-        self.markets_by_hash[m1_hash] = m1_id
-        self.consumed_market_hashes[m1_hash] = True
-
-        m1_creator_pos = UserPositionRecord(
-            position_id=m1_id + "_" + creator,
-            market_id=m1_id,
-            user=creator,
-            yes_shares=u256(600_000_000_000),
-            no_shares=u256(400_000_000_000),
-            has_claimed=False,
-            claimed_amount=u256(0)
-        )
-        self.positions[m1_id + "_" + creator] = m1_creator_pos
+    # --------------------------------------------------------------------------
+    # Fallback Liquidity Funding Method
+    # --------------------------------------------------------------------------
+    @gl.public.write.payable
+    def fund_contract(self) -> None:
+        """
+        Accepts direct native GEN transfers to increase protocol liquidity / reserves.
+        """
+        val = int(gl.message.value)
+        if val > 0:
+            self.total_volume_locked += u256(val)
 
     # --------------------------------------------------------------------------
     # Cryptographic Hashing
@@ -451,17 +422,84 @@ class ConsensusPredictionEngine(gl.Contract):
 
         self.total_payouts_distributed += u256(payout)
 
+        transfer_succeeded = False
         try:
             gl.emit_transfer(Address(sender_hex), u256(payout))
+            transfer_succeeded = True
         except Exception:
+            try:
+                target = gl.get_contract_at(sender_hex)
+                target.emit_transfer(value=u256(payout), on='finalized')
+                transfer_succeeded = True
+            except Exception:
+                transfer_succeeded = False
+
+        if not transfer_succeeded:
             cur = int(self.claimable_balances.get(sender_hex, u256(0)))
             self.claimable_balances[sender_hex] = u256(cur + payout)
+            return (
+                "CLAIM_TRANSFER_FAILED_CREDITED_TO_BALANCE: " + sender_hex
+                + " | Amount: " + str(payout) + " wei credited to claimable balance. Call withdraw_claimable() to withdraw."
+            )
 
         return "CLAIM_SUCCESS: " + sender_hex + " | Amount: " + str(payout) + " wei"
 
     # --------------------------------------------------------------------------
+    # Core Function 5: Recoverable Claimable Withdrawal
+    # --------------------------------------------------------------------------
+    @gl.public.write
+    def withdraw_claimable(self) -> str:
+        """
+        Enables claimants whose payout transfers previously failed to safely withdraw
+        their accumulated claimable balances.
+        """
+        sender_hex = self._validate_eth_address(str(gl.message.sender), "Caller").lower()
+        assert sender_hex in self.claimable_balances, \
+            "[ERR_NO_CLAIMABLE] No claimable funds found for caller."
+        bal = int(self.claimable_balances[sender_hex])
+        assert bal > 0, "[ERR_ZERO_CLAIMABLE] Claimable balance is zero."
+
+        # Optimistically zero balance before transfer
+        self.claimable_balances[sender_hex] = u256(0)
+
+        transfer_succeeded = False
+        try:
+            gl.emit_transfer(Address(sender_hex), u256(bal))
+            transfer_succeeded = True
+        except Exception:
+            try:
+                target = gl.get_contract_at(sender_hex)
+                target.emit_transfer(value=u256(bal), on='finalized')
+                transfer_succeeded = True
+            except Exception:
+                transfer_succeeded = False
+
+        if not transfer_succeeded:
+            # Preserve and restore balance upon failed transfer
+            self.claimable_balances[sender_hex] = u256(bal)
+            raise AssertionError(
+                "[ERR_WITHDRAWAL_FAILED] Native transfer failed during withdrawal. Claimable balance restored: "
+                + str(bal) + " wei."
+            )
+
+        return "WITHDRAW_SUCCESS: " + sender_hex + " | Amount: " + str(bal) + " wei"
+
+    # --------------------------------------------------------------------------
     # Public Gateway Views
     # --------------------------------------------------------------------------
+    @gl.public.view
+    def get_market_count(self) -> int:
+        return int(self.total_markets_created)
+
+    @gl.public.view
+    def get_total_volume_locked(self) -> str:
+        return str(int(self.total_volume_locked))
+
+    @gl.public.view
+    def get_claimable_balance(self, user_address: str) -> str:
+        clean_u = self._validate_eth_address(user_address, "User address").lower()
+        return str(int(self.claimable_balances.get(clean_u, u256(0))))
+
     @gl.public.view
     def get_market_odds(self, market_id: str) -> dict:
         clean_m_id = market_id.strip().upper()

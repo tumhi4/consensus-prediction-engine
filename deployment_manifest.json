@@ -1,17 +1,17 @@
 {
   "contractName": "ConsensusPredictionEngine",
-  "contractAddress": "0xd1ff098173ce1697bd2226477ad0290091529ba7",
-  "transactionHash": "0xe21a5c3b7ca17793f87d19f7846d9f6a304e41ed75a677b0e8362782b50864c0",
-  "deployerAddress": "0x8bCAD778C3f7e57Cc8d7D256AB376361cC5C4384",
-  "deployedAt": "2026-09-22T22:15:42.462Z",
+  "contractAddress": "0x9a47dd1A142A660E6202E1ABCbc7785Bc5B541fa",
+  "transactionHash": "0xeb453ae3d0e902b4a13e30c4e9cc9aa4aaf8362f913dba143dfe26482cee3717",
+  "deployerAddress": "0x087f4Df9337A61Ce932facf1E11533f12802d445",
+  "deployedAt": "2026-10-07T22:25:12.137Z",
   "network": "GenLayer Studio Testnet",
   "rpcEndpoint": "https://studio.genlayer.com/api",
-  "explorerUrl": "https://explorer-studio.genlayer.com/address/0xd1ff098173ce1697bd2226477ad0290091529ba7",
+  "explorerUrl": "https://explorer-studio.genlayer.com/address/0x9a47dd1A142A660E6202E1ABCbc7785Bc5B541fa",
   "verification": {
-    "marketId": "MARKET_1",
-    "probYesBps": 6000,
-    "probNoBps": 4000,
-    "totalVolumeWei": "1000000000000",
-    "marketStatus": "OPEN_FOR_TRADING"
+    "totalMarketsCreated": 0,
+    "totalVolumeLockedWei": "0",
+    "deployerClaimableBalanceWei": "0",
+    "zeroUnbackedGenesisDebt": true,
+    "recoverablePayoutsSupported": true
   }
 }
